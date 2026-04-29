@@ -16,55 +16,7 @@ st.set_page_config(
 )
 
 # ============================================
-# CONNEXION SUPABASE
-# ============================================
-@st.cache_resource
-def connexion_supabase():
-    url = st.secrets["supabase"]["url"]
-    key = st.secrets["supabase"]["key"]
-    return create_client(url, key)
-
-def charger_donnees():
-    try:
-        supabase = connexion_supabase()
-        response = supabase.table("donnees").select("*").execute()
-        if response.data:
-            return pd.DataFrame(response.data)
-        return pd.DataFrame()
-    except Exception as e:
-        st.error(f"Erreur de chargement : {e}")
-        return pd.DataFrame()
-
-def sauvegarder_donnees(nouvelle_ligne):
-    try:
-        supabase = connexion_supabase()
-        supabase.table("donnees").insert(nouvelle_ligne).execute()
-        return True
-    except Exception as e:
-        st.error(f"Erreur de sauvegarde : {e}")
-        return False
-
-def exporter_excel(df):
-    chemin = "data/export_final.xlsx"
-    if not os.path.exists("data"):
-        os.makedirs("data")
-    with pd.ExcelWriter(chemin, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False, sheet_name="Données")
-        workbook  = writer.book
-        worksheet = writer.sheets["Données"]
-        format_entete = workbook.add_format({
-            "bold"      : True,
-            "bg_color"  : "#0f1729",
-            "font_color": "white",
-            "border"    : 1
-        })
-        for col_num, value in enumerate(df.columns.values):
-            worksheet.write(0, col_num, value, format_entete)
-            worksheet.set_column(col_num, col_num, 22)
-    return chemin
-
-# ============================================
-# DESIGN CSS
+# DESIGN CSS COMPLET ET CORRIGE
 # ============================================
 st.markdown("""
 <style>
@@ -73,19 +25,42 @@ st.markdown("""
 
     .main { background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf3 100%); }
 
+    /* ---- SIDEBAR ---- */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f1729 0%, #1a2f5e 50%, #0f1729 100%);
+        background: linear-gradient(180deg, #0f1729 0%, #1a2f5e 50%, #0f1729 100%) !important;
         border-right: 1px solid rgba(255,255,255,0.08);
     }
     section[data-testid="stSidebar"] * { color: white !important; }
 
-    button[data-testid="collapsedControl"] {
-        display: block !important;
+    /* Bouton collapse toujours visible */
+    div[data-testid="collapsedControl"],
+    div[data-testid="stSidebarCollapsedControl"] {
+        display: flex !important;
         visibility: visible !important;
         opacity: 1 !important;
+        z-index: 99999 !important;
+        position: fixed !important;
         background: #1a2f5e !important;
         border-radius: 0 8px 8px 0 !important;
+    }
+    div[data-testid="collapsedControl"] svg,
+    div[data-testid="stSidebarCollapsedControl"] svg {
+        fill: white !important;
         color: white !important;
+    }
+    div[data-testid="collapsedControl"] button,
+    div[data-testid="stSidebarCollapsedControl"] button {
+        color: white !important;
+        background: transparent !important;
+        display: flex !important;
+        visibility: visible !important;
+    }
+
+    /* Bouton collapse quand sidebar ouverte */
+    button[data-testid="baseButton-headerNoPadding"] {
+        color: white !important;
+        display: flex !important;
+        visibility: visible !important;
     }
 
     .sidebar-logo {
@@ -121,6 +96,7 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(79,142,247,0.4);
     }
 
+    /* ---- EN-TETE ---- */
     .page-header {
         background: linear-gradient(135deg, #0f1729 0%, #1a2f5e 100%);
         border-radius: 16px;
@@ -164,6 +140,7 @@ st.markdown("""
         border: 1px solid rgba(79,142,247,0.3);
     }
 
+    /* ---- CARTES METRIQUES ---- */
     .metric-card {
         background: white;
         border-radius: 14px;
@@ -173,6 +150,7 @@ st.markdown("""
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         position: relative;
         overflow: hidden;
+        margin-bottom: 15px;
     }
     .metric-card:hover {
         transform: translateY(-3px);
@@ -207,6 +185,7 @@ st.markdown("""
         font-weight: 500;
     }
 
+    /* ---- FORMULAIRE ---- */
     .form-card {
         background: white;
         border-radius: 16px;
@@ -227,6 +206,7 @@ st.markdown("""
         margin-bottom: 18px;
     }
 
+    /* ---- SECTION CARD ---- */
     .section-card {
         background: white;
         border-radius: 14px;
@@ -252,6 +232,7 @@ st.markdown("""
         to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* ---- BOUTONS ---- */
     .stButton > button {
         background: linear-gradient(135deg, #1a56db 0%, #4f8ef7 100%);
         color: white;
@@ -283,6 +264,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
+    /* ---- CHAMPS ---- */
     .stTextInput > div > input,
     .stNumberInput > div > input,
     .stTextArea > div > textarea {
@@ -300,6 +282,7 @@ st.markdown("""
         box-shadow: 0 0 0 3px rgba(79,142,247,0.1);
     }
 
+    /* ---- NOTIFICATION ---- */
     .success-banner {
         background: linear-gradient(135deg, #ecfdf5, #d1fae5);
         border: 1px solid #6ee7b7;
@@ -332,9 +315,54 @@ st.markdown("""
 
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
-    header { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
+
+# ============================================
+# CONNEXION SUPABASE
+# ============================================
+@st.cache_resource
+def connexion_supabase():
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["key"]
+    return create_client(url, key)
+
+def charger_donnees():
+    try:
+        supabase = connexion_supabase()
+        response = supabase.table("donnees").select("*").execute()
+        if response.data:
+            return pd.DataFrame(response.data)
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Erreur de chargement : {e}")
+        return pd.DataFrame()
+
+def sauvegarder_donnees(nouvelle_ligne):
+    try:
+        supabase = connexion_supabase()
+        supabase.table("donnees").insert(nouvelle_ligne).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erreur de sauvegarde : {e}")
+        return False
+
+def exporter_excel(df):
+    chemin = "data/export_final.xlsx"
+    if not os.path.exists("data"):
+        os.makedirs("data")
+    with pd.ExcelWriter(chemin, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Données")
+        workbook  = writer.book
+        worksheet = writer.sheets["Données"]
+        format_entete = workbook.add_format({
+            "bold": True, "bg_color": "#0f1729",
+            "font_color": "white", "border": 1
+        })
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, format_entete)
+            worksheet.set_column(col_num, col_num, 22)
+    return chemin
 
 # ============================================
 # BARRE LATERALE
@@ -348,16 +376,12 @@ st.sidebar.markdown("""
 """, unsafe_allow_html=True)
 
 menu = st.sidebar.radio("", [
-    "Accueil",
-    "Formulaire",
-    "Analyse",
-    "Données"
+    "Accueil", "Formulaire", "Analyse", "Données"
 ])
 
 st.sidebar.markdown("""
     <div class="sidebar-footer">
-        DataCollect Pro &copy; 2026<br>
-        Commerce & Entreprise
+        DataCollect Pro &copy; 2026<br>Commerce & Entreprise
     </div>
 """, unsafe_allow_html=True)
 
@@ -373,7 +397,7 @@ if menu == "Accueil":
         </div>
     """, unsafe_allow_html=True)
 
-    df = charger_donnees()
+    df    = charger_donnees()
     total = len(df) if not df.empty else 0
     sect  = df["secteur"].nunique() if not df.empty and "secteur" in df.columns else 0
     sat   = round(df["satisfaction"].mean(), 1) if not df.empty and "satisfaction" in df.columns else 0
@@ -447,23 +471,14 @@ elif menu == "Formulaire":
         with col1:
             nom_entreprise = st.text_input("Nom de l'entreprise *", placeholder="Ex : ABC Commerce")
             secteur = st.selectbox("Secteur d'activité *", [
-                "Sélectionnez...",
-                "Commerce de détail",
-                "Commerce de gros",
-                "Services",
-                "Industrie",
-                "Agriculture",
-                "Technologie",
-                "Autre"
+                "Sélectionnez...", "Commerce de détail", "Commerce de gros",
+                "Services", "Industrie", "Agriculture", "Technologie", "Autre"
             ])
         with col2:
             nom_repondant = st.text_input("Nom du répondant *", placeholder="Ex : Jean Dupont")
             taille_entreprise = st.selectbox("Taille de l'entreprise *", [
-                "Sélectionnez...",
-                "Micro (1-9 employés)",
-                "Petite (10-49 employés)",
-                "Moyenne (50-249 employés)",
-                "Grande (250+ employés)"
+                "Sélectionnez...", "Micro (1-9 employés)", "Petite (10-49 employés)",
+                "Moyenne (50-249 employés)", "Grande (250+ employés)"
             ])
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -484,19 +499,13 @@ elif menu == "Formulaire":
         with col5:
             croissance = st.select_slider(
                 "Taux de croissance estimé (%)",
-                options=[-20, -10, -5, 0, 5, 10, 15, 20, 25, 30, 50],
-                value=0
+                options=[-20, -10, -5, 0, 5, 10, 15, 20, 25, 30, 50], value=0
             )
         with col6:
             satisfaction = st.slider("Niveau de satisfaction client (1 à 10)", 1, 10, 5)
         defis = st.multiselect("Principaux défis rencontrés", [
-            "Manque de financement",
-            "Concurrence accrue",
-            "Manque de personnel qualifié",
-            "Problèmes logistiques",
-            "Digitalisation",
-            "Accès aux marchés",
-            "Autre"
+            "Manque de financement", "Concurrence accrue", "Manque de personnel qualifié",
+            "Problèmes logistiques", "Digitalisation", "Accès aux marchés", "Autre"
         ])
         commentaire = st.text_area("Commentaires supplémentaires", placeholder="Vos observations...")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -548,11 +557,9 @@ elif menu == "Analyse":
     else:
         COULEURS = px.colors.qualitative.Set2
         LAYOUT   = dict(
-            paper_bgcolor="white",
-            plot_bgcolor="#fafbff",
+            paper_bgcolor="white", plot_bgcolor="#fafbff",
             font=dict(family="Inter", size=12, color="#0f1729"),
-            margin=dict(t=40, b=20, l=20, r=20),
-            showlegend=False
+            margin=dict(t=40, b=20, l=20, r=20), showlegend=False
         )
 
         col1, col2, col3, col4 = st.columns(4)
