@@ -12,21 +12,8 @@ st.set_page_config(
     page_title="DataCollect Pro",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
-
-# ============================================
-# INITIALISATION SESSION STATE
-# ============================================
-if "page" not in st.session_state:
-    st.session_state.page = "Accueil"
-
-# Lire la page depuis les parametres URL
-params = st.query_params
-if "page" in params and st.session_state.page == "Accueil":
-    st.session_state.page = params["page"]
-
-menu = st.session_state.page
 
 # ============================================
 # CONNEXION SUPABASE
@@ -66,8 +53,10 @@ def exporter_excel(df):
         workbook  = writer.book
         worksheet = writer.sheets["Données"]
         format_entete = workbook.add_format({
-            "bold": True, "bg_color": "#0f1729",
-            "font_color": "white", "border": 1
+            "bold"      : True,
+            "bg_color"  : "#0f1729",
+            "font_color": "white",
+            "border"    : 1
         })
         for col_num, value in enumerate(df.columns.values):
             worksheet.write(0, col_num, value, format_entete)
@@ -75,7 +64,7 @@ def exporter_excel(df):
     return chemin
 
 # ============================================
-# DESIGN CSS + NAVBAR
+# DESIGN CSS
 # ============================================
 st.markdown("""
 <style>
@@ -84,103 +73,58 @@ st.markdown("""
 
     .main { background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf3 100%); }
 
-    /* Cacher completement la sidebar Streamlit */
-    section[data-testid="stSidebar"] { display: none !important; }
-    div[data-testid="collapsedControl"] { display: none !important; }
-    button[data-testid="baseButton-headerNoPadding"] { display: none !important; }
-
-    /* Navbar fixe */
-    .nav-container {
-        position: fixed;
-        top: 0; left: 0;
-        width: 220px;
-        height: 100vh;
+    section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0f1729 0%, #1a2f5e 50%, #0f1729 100%);
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.3);
-        overflow: hidden;
+        border-right: 1px solid rgba(255,255,255,0.08);
     }
-    .nav-logo {
+    section[data-testid="stSidebar"] * { color: white !important; }
+
+    button[data-testid="collapsedControl"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        background: #1a2f5e !important;
+        border-radius: 0 8px 8px 0 !important;
+        color: white !important;
+    }
+
+    .sidebar-logo {
         text-align: center;
-        padding: 28px 15px 18px 15px;
+        padding: 30px 10px 20px 10px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 20px;
     }
-    .nav-logo-icon {
-        width: 48px; height: 48px;
+    .sidebar-logo h1 {
+        font-size: 1.3em;
+        font-weight: 700;
+        color: white !important;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin: 10px 0 5px 0;
+    }
+    .sidebar-logo p {
+        font-size: 0.72em;
+        color: rgba(255,255,255,0.5) !important;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .logo-icon {
+        width: 55px;
+        height: 55px;
         background: linear-gradient(135deg, #4f8ef7, #1a56db);
-        border-radius: 12px;
-        margin: 0 auto 10px auto;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4em;
+        margin: 0 auto 12px auto;
+        font-size: 1.6em;
         box-shadow: 0 4px 15px rgba(79,142,247,0.4);
     }
-    .nav-logo h2 {
-        color: white !important;
-        font-size: 1em;
-        font-weight: 700;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        margin: 0 0 3px 0;
-    }
-    .nav-logo p {
-        color: rgba(255,255,255,0.4) !important;
-        font-size: 0.65em;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin: 0;
-    }
-    .nav-menu {
-        padding: 18px 10px;
-        flex: 1;
-    }
-    .nav-link {
-        display: block;
-        padding: 11px 16px;
-        margin-bottom: 5px;
-        border-radius: 10px;
-        color: rgba(255,255,255,0.6) !important;
-        font-size: 0.87em;
-        font-weight: 500;
-        text-decoration: none !important;
-        transition: all 0.2s ease;
-        border: none;
-        letter-spacing: 0.3px;
-    }
-    .nav-link:hover {
-        background: rgba(255,255,255,0.08);
-        color: white !important;
-        text-decoration: none !important;
-    }
-    .nav-link.active {
-        background: linear-gradient(135deg, #1a56db, #4f8ef7);
-        color: white !important;
-        box-shadow: 0 4px 12px rgba(26,86,219,0.4);
-    }
-    .nav-footer {
-        padding: 15px;
-        border-top: 1px solid rgba(255,255,255,0.08);
-        text-align: center;
-        font-size: 0.65em;
-        color: rgba(255,255,255,0.25) !important;
-    }
 
-    /* Contenu principal */
-    .block-container {
-        padding-top: 20px !important;
-        padding-left: 240px !important;
-        padding-right: 20px !important;
-        max-width: 100% !important;
-    }
-
-    /* En-tete */
     .page-header {
         background: linear-gradient(135deg, #0f1729 0%, #1a2f5e 100%);
         border-radius: 16px;
-        padding: 28px 32px;
+        padding: 30px 35px;
         margin-bottom: 25px;
         color: white;
         position: relative;
@@ -196,13 +140,13 @@ st.markdown("""
         border-radius: 50%;
     }
     .page-header h1 {
-        font-size: 1.7em;
+        font-size: 1.8em;
         font-weight: 700;
-        margin: 0 0 5px 0;
+        margin: 0 0 6px 0;
         color: white;
     }
     .page-header p {
-        font-size: 0.85em;
+        font-size: 0.88em;
         color: rgba(255,255,255,0.6);
         margin: 0;
     }
@@ -210,7 +154,7 @@ st.markdown("""
         display: inline-block;
         background: rgba(79,142,247,0.25);
         color: #7eb3ff !important;
-        font-size: 0.7em;
+        font-size: 0.72em;
         padding: 3px 12px;
         border-radius: 20px;
         margin-bottom: 10px;
@@ -220,17 +164,15 @@ st.markdown("""
         border: 1px solid rgba(79,142,247,0.3);
     }
 
-    /* Cartes metriques */
     .metric-card {
         background: white;
         border-radius: 14px;
-        padding: 20px 22px;
+        padding: 22px 24px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.06);
         border: 1px solid rgba(0,0,0,0.05);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         position: relative;
         overflow: hidden;
-        margin-bottom: 15px;
     }
     .metric-card:hover {
         transform: translateY(-3px);
@@ -245,7 +187,7 @@ st.markdown("""
         border-radius: 14px 14px 0 0;
     }
     .metric-label {
-        font-size: 0.72em;
+        font-size: 0.75em;
         font-weight: 600;
         color: #8a9ab5;
         text-transform: uppercase;
@@ -253,58 +195,56 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .metric-value {
-        font-size: 1.9em;
+        font-size: 2em;
         font-weight: 700;
         color: #0f1729;
         line-height: 1;
     }
     .metric-sub {
-        font-size: 0.75em;
+        font-size: 0.78em;
         color: #4f8ef7;
         margin-top: 6px;
         font-weight: 500;
     }
 
-    /* Formulaire */
     .form-card {
         background: white;
         border-radius: 16px;
-        padding: 26px 30px;
+        padding: 28px 32px;
         box-shadow: 0 2px 16px rgba(0,0,0,0.07);
         border: 1px solid rgba(0,0,0,0.05);
-        margin-bottom: 18px;
+        margin-bottom: 20px;
         animation: fadeInUp 0.4s ease;
     }
     .form-section-title {
-        font-size: 0.78em;
+        font-size: 0.8em;
         font-weight: 700;
         color: #4f8ef7;
         text-transform: uppercase;
         letter-spacing: 2px;
         padding-bottom: 12px;
         border-bottom: 2px solid #f0f4ff;
-        margin-bottom: 16px;
+        margin-bottom: 18px;
     }
 
-    /* Section card */
     .section-card {
         background: white;
         border-radius: 14px;
-        padding: 22px;
+        padding: 25px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.06);
         border: 1px solid rgba(0,0,0,0.05);
-        margin-bottom: 18px;
+        margin-bottom: 20px;
         animation: fadeInUp 0.4s ease;
     }
     .section-title {
-        font-size: 0.88em;
+        font-size: 0.95em;
         font-weight: 700;
         color: #0f1729;
         text-transform: uppercase;
         letter-spacing: 1.5px;
         padding-bottom: 12px;
         border-bottom: 2px solid #f0f4ff;
-        margin-bottom: 16px;
+        margin-bottom: 18px;
     }
 
     @keyframes fadeInUp {
@@ -312,7 +252,6 @@ st.markdown("""
         to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Boutons */
     .stButton > button {
         background: linear-gradient(135deg, #1a56db 0%, #4f8ef7 100%);
         color: white;
@@ -321,6 +260,7 @@ st.markdown("""
         padding: 12px 32px;
         font-weight: 600;
         font-size: 0.9em;
+        letter-spacing: 0.5px;
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(26,86,219,0.3);
         width: 100%;
@@ -343,7 +283,6 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Champs */
     .stTextInput > div > input,
     .stNumberInput > div > input,
     .stTextArea > div > textarea {
@@ -361,7 +300,6 @@ st.markdown("""
         box-shadow: 0 0 0 3px rgba(79,142,247,0.1);
     }
 
-    /* Notification */
     .success-banner {
         background: linear-gradient(135deg, #ecfdf5, #d1fae5);
         border: 1px solid #6ee7b7;
@@ -381,40 +319,46 @@ st.markdown("""
     .custom-divider {
         height: 1px;
         background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
-        margin: 18px 0;
+        margin: 20px 0;
+    }
+
+    .sidebar-footer {
+        padding: 20px;
+        font-size: 0.72em;
+        color: rgba(255,255,255,0.3) !important;
+        text-align: center;
+        margin-top: 40px;
     }
 
     #MainMenu { visibility: hidden; }
-    footer    { visibility: hidden; }
-    header    { visibility: hidden; }
+    footer { visibility: hidden; }
+    header { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================
-# NAVBAR FIXE
+# BARRE LATERALE
 # ============================================
-accueil_class  = "nav-link active" if menu == "Accueil"    else "nav-link"
-form_class     = "nav-link active" if menu == "Formulaire" else "nav-link"
-analyse_class  = "nav-link active" if menu == "Analyse"    else "nav-link"
-donnees_class  = "nav-link active" if menu == "Données"    else "nav-link"
-
-st.markdown(f"""
-<div class="nav-container">
-    <div class="nav-logo">
-        <div class="nav-logo-icon">📊</div>
-        <h2>DataCollect</h2>
+st.sidebar.markdown("""
+    <div class="sidebar-logo">
+        <div class="logo-icon">📊</div>
+        <h1>DataCollect</h1>
         <p>Pro Edition</p>
     </div>
-    <div class="nav-menu">
-        <a href="?page=Accueil"    class="{accueil_class}">Accueil</a>
-        <a href="?page=Formulaire" class="{form_class}">Formulaire</a>
-        <a href="?page=Analyse"    class="{analyse_class}">Analyse</a>
-        <a href="?page=Donn%C3%A9es" class="{donnees_class}">Données</a>
+""", unsafe_allow_html=True)
+
+menu = st.sidebar.radio("", [
+    "Accueil",
+    "Formulaire",
+    "Analyse",
+    "Données"
+])
+
+st.sidebar.markdown("""
+    <div class="sidebar-footer">
+        DataCollect Pro &copy; 2026<br>
+        Commerce & Entreprise
     </div>
-    <div class="nav-footer">
-        DataCollect Pro &copy; 2026<br>Commerce & Entreprise
-    </div>
-</div>
 """, unsafe_allow_html=True)
 
 # ============================================
@@ -429,7 +373,7 @@ if menu == "Accueil":
         </div>
     """, unsafe_allow_html=True)
 
-    df    = charger_donnees()
+    df = charger_donnees()
     total = len(df) if not df.empty else 0
     sect  = df["secteur"].nunique() if not df.empty and "secteur" in df.columns else 0
     sat   = round(df["satisfaction"].mean(), 1) if not df.empty and "satisfaction" in df.columns else 0
@@ -496,20 +440,30 @@ elif menu == "Formulaire":
     """, unsafe_allow_html=True)
 
     with st.form("formulaire", clear_on_submit=True):
+
         st.markdown('<div class="form-card">', unsafe_allow_html=True)
         st.markdown('<div class="form-section-title">01 — Informations générales</div>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
             nom_entreprise = st.text_input("Nom de l'entreprise *", placeholder="Ex : ABC Commerce")
             secteur = st.selectbox("Secteur d'activité *", [
-                "Sélectionnez...", "Commerce de détail", "Commerce de gros",
-                "Services", "Industrie", "Agriculture", "Technologie", "Autre"
+                "Sélectionnez...",
+                "Commerce de détail",
+                "Commerce de gros",
+                "Services",
+                "Industrie",
+                "Agriculture",
+                "Technologie",
+                "Autre"
             ])
         with col2:
             nom_repondant = st.text_input("Nom du répondant *", placeholder="Ex : Jean Dupont")
             taille_entreprise = st.selectbox("Taille de l'entreprise *", [
-                "Sélectionnez...", "Micro (1-9 employés)", "Petite (10-49 employés)",
-                "Moyenne (50-249 employés)", "Grande (250+ employés)"
+                "Sélectionnez...",
+                "Micro (1-9 employés)",
+                "Petite (10-49 employés)",
+                "Moyenne (50-249 employés)",
+                "Grande (250+ employés)"
             ])
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -530,13 +484,19 @@ elif menu == "Formulaire":
         with col5:
             croissance = st.select_slider(
                 "Taux de croissance estimé (%)",
-                options=[-20, -10, -5, 0, 5, 10, 15, 20, 25, 30, 50], value=0
+                options=[-20, -10, -5, 0, 5, 10, 15, 20, 25, 30, 50],
+                value=0
             )
         with col6:
             satisfaction = st.slider("Niveau de satisfaction client (1 à 10)", 1, 10, 5)
         defis = st.multiselect("Principaux défis rencontrés", [
-            "Manque de financement", "Concurrence accrue", "Manque de personnel qualifié",
-            "Problèmes logistiques", "Digitalisation", "Accès aux marchés", "Autre"
+            "Manque de financement",
+            "Concurrence accrue",
+            "Manque de personnel qualifié",
+            "Problèmes logistiques",
+            "Digitalisation",
+            "Accès aux marchés",
+            "Autre"
         ])
         commentaire = st.text_area("Commentaires supplémentaires", placeholder="Vos observations...")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -588,9 +548,11 @@ elif menu == "Analyse":
     else:
         COULEURS = px.colors.qualitative.Set2
         LAYOUT   = dict(
-            paper_bgcolor="white", plot_bgcolor="#fafbff",
+            paper_bgcolor="white",
+            plot_bgcolor="#fafbff",
             font=dict(family="Inter", size=12, color="#0f1729"),
-            margin=dict(t=40, b=20, l=20, r=20), showlegend=False
+            margin=dict(t=40, b=20, l=20, r=20),
+            showlegend=False
         )
 
         col1, col2, col3, col4 = st.columns(4)
